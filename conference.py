@@ -70,6 +70,8 @@ class ConferenceApi(remote.Service):
         user = endpoints.get_current_user()
         if not user:
             raise endpoints.UnauthorizedException('Authorization required')
+
+        p_key = ndb.Key(Profile, user_id)
         profile = None
         ## step 2: create a new Profile from logged in user data
         ## you can use user.nickname() to get displayName
