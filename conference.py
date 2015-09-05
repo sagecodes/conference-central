@@ -252,6 +252,10 @@ class ConferenceApi(remote.Service):
 
         q = q.filter(Conference.topics == "Movie Making")
 
+        q = q.order(Conference.name)
+
+        q = q.filter(Conference.month == 6)
+
         # advanced filter building and usage
         # field = "city"
         # operator = "="
