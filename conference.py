@@ -66,6 +66,16 @@ FIELDS =    {
             'MAX_ATTENDEES': 'maxAttendees',
             }
 
+CONF_GET_REQUEST = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    websafeConferenceKey=messages.StringField(1),
+)
+
+CONF_POST_REQUEST = endpoints.ResourceContainer(
+    ConferenceForm,
+    websafeConferenceKey=messages.StringField(1),
+)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 @endpoints.api( name='conference',
@@ -287,6 +297,30 @@ class ConferenceApi(remote.Service):
             for conf in conferences]
         )
 
+
+    @endpoints.method(CONF_POST_REQUEST, ConferenceForm,
+            path='conference/{websafeConferenceKey}',
+            http_method='PUT', name='updateConference')
+    def updateConference(self, request):
+        """Update conference w/provided fields & return w/updated info."""
+        return self._updateConferenceObject(request)
+
+
+    @endpoints.method(CONF_GET_REQUEST, ConferenceForm,
+            path='conference/{websafeConferenceKey}',
+            http_method='GET', name='getConference')
+    def getConference(self, request):
+        """Return requested conference (by websafeConferenceKey)."""
+        # get Conference object from request; bail if not found
+        conf = ndb.Key(urlsafe=request.websafeConferenceKey).get()
+        if not conf:
+            raise endpoints.NotFoundException(
+                'No conference found with key: %s' % request.websafeConferenceKey)
+        prof = conf.key.parent().get()
+        # return ConferenceForm
+        return self._copyConferenceToForm(conf, getattr(prof, 'displayName'))
+
+
     @endpoints.method(message_types.VoidMessage, ConferenceForms,
             path='getConferencesCreated',
             http_method='POST',
@@ -310,35 +344,36 @@ class ConferenceApi(remote.Service):
             items=[self._copyConferenceToForm(conf, displayName) for conf in conferences]
         )
 
-    @endpoints.method(message_types.VoidMessage, ConferenceForms,
-        path='filterPlayground',
-        http_method='GET', name='filterPlayground')
-    def filterPlayground(self, request):
-        q = Conference.query()
-        # simple filter usage:
-        q = q.filter(Conference.city == "London")
 
-        q = q.filter(Conference.topics == "Movie Making")
+    # @endpoints.method(message_types.VoidMessage, ConferenceForms,
+    #     path='filterPlayground',
+    #     http_method='GET', name='filterPlayground')
+    # def filterPlayground(self, request):
+    #     q = Conference.query()
+    #     # simple filter usage:
+    #     q = q.filter(Conference.city == "London")
 
-        q = q.order(Conference.name)
+    #     q = q.filter(Conference.topics == "Movie Making")
 
-        q = q.filter(Conference.maxAttendees > 10)
+    #     q = q.order(Conference.name)
 
-        # advanced filter building and usage
-        # field = "city"
-        # operator = "="
-        # value = "London"
-        # f = ndb.query.FilterNode(field, operator, value)
-        # q = q.filter(f)
+    #     q = q.filter(Conference.maxAttendees > 10)
 
-        # TODO
-        # add 2 filters:
-        # 1: city equals to London
-        # 2: topic equals "Medical Innovations"
+    #     # advanced filter building and usage
+    #     # field = "city"
+    #     # operator = "="
+    #     # value = "London"
+    #     # f = ndb.query.FilterNode(field, operator, value)
+    #     # q = q.filter(f)
 
-        return ConferenceForms(
-            items=[self._copyConferenceToForm(conf, "") for conf in q]
-        )
+    #     # TODO
+    #     # add 2 filters:
+    #     # 1: city equals to London
+    #     # 2: topic equals "Medical Innovations"
+
+    #     return ConferenceForms(
+    #         items=[self._copyConferenceToForm(conf, "") for conf in q]
+    #     )
 
 # registers API
 api = endpoints.api_server([ConferenceApi])
