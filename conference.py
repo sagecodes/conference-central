@@ -470,6 +470,16 @@ class ConferenceApi(remote.Service):
         return announcement
 
 
+    @endpoints.method(message_types.VoidMessage, StringMessage,
+            path='conference/announcement/get',
+            http_method='GET', name='getAnnouncement')
+    def getAnnouncement(self, request):
+        """Return Announcement from memcache."""
+        # TODO 1
+        # return an existing announcement from Memcache or an empty string.
+        announcement = ""
+        return StringMessage(data=announcement)
+
 
     # @endpoints.method(message_types.VoidMessage, ConferenceForms,
     #     path='filterPlayground',
