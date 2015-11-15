@@ -9,6 +9,7 @@ class SetAnnouncementHandler(webapp2.RequestHandler):
         """Set Announcement in Memcache."""
         # TODO 1
         # use _cacheAnnouncement() to set announcement in Memcache
+        ConferenceApi._cacheAnnouncement()
 
 app = webapp2.WSGIApplication([
     ('/crons/set_announcement', SetAnnouncementHandler),
