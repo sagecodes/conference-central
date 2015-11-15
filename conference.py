@@ -273,6 +273,12 @@ class ConferenceApi(remote.Service):
 
         # create Conference & return (modified) ConferenceForm
         Conference(**data).put()
+        # create Conference, send email to organizer confirming
+        # creation of Conference & return (modified) ConferenceForm
+        taskqueue.add(params={'email': user.email(),
+            'conferenceInfo': repr(request)},
+            url='/tasks/send_confirmation_email'
+        )
 
         return request
 
@@ -485,15 +491,6 @@ class ConferenceApi(remote.Service):
             announcement = ""
         return StringMessage(data=announcement)
 
-
-        # Look for TODO 2
-        # create Conference, send email to organizer confirming
-        # creation of Conference & return (modified) ConferenceForm
-        Conference(**data).put()
-        taskqueue.add(params={'email': user.email(),
-            'conferenceInfo': repr(request)},
-            url='/tasks/send_confirmation_email'
-        )
 
 # registers API
 api = endpoints.api_server([ConferenceApi])

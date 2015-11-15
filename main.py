@@ -5,6 +5,7 @@ from google.appengine.api import mail
 from conference import ConferenceApi
 
 
+
 class SetAnnouncementHandler(webapp2.RequestHandler):
     def get(self):
         """Set Announcement in Memcache."""
