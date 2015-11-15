@@ -43,6 +43,7 @@ from models import SessionForms
 from models import SessionsByTypeForm
 from models import SessionsByNameForm
 from models import SessionsByDurationForm
+from models import SessionsBySpeakerForm
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -234,7 +235,7 @@ class ConferenceApi(remote.Service):
             http_method='GET',
             name='getConferenceSessionsByName')
     def getConferenceSessionsByName(self, request):
-        """Query for conference sessions by type."""
+        """Query for conference sessions by name."""
         # Get the conference object from the request.
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
         # Create ancestor query for all sessions
@@ -249,11 +250,25 @@ class ConferenceApi(remote.Service):
             http_method='GET',
             name='getConferenceSessionsByDuration')
     def getConferenceSessionsByDuration(self, request):
-        """Query for conference sessions by type."""
+        """Query for conference sessions by duration."""
         # Get the conference object from the request.
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
         # Create ancestor query for all sessions
         sesses = Session.query(Session.duration == request.duration)
+        # Return set of ConferenceForm objects per Conference
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sesses]
+        )
+
+
+    @endpoints.method(SessionsBySpeakerForm, SessionForms,
+            path='conference/speaker',
+            http_method='GET',
+            name='getConferenceSessionsBySpeaker')
+    def getConferenceSessionsByDuration(self, request):
+        """Query for conference sessions by speaker."""
+        # Create ancestor query for all sessions
+        sesses = Session.query(Session.speaker == request.speaker)
         # Return set of ConferenceForm objects per Conference
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sesses]
