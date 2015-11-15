@@ -36,10 +36,13 @@ from models import ConferenceForms
 from models import ConferenceQueryForm
 from models import ConferenceQueryForms
 from models import TeeShirtSize
-
+# session imports
 from models import Session
 from models import SessionForm
 from models import SessionForms
+from models import SessionsByTypeForm
+from models import SessionsByNameForm
+from models import SessionsByDurationForm
 
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
@@ -206,6 +209,51 @@ class ConferenceApi(remote.Service):
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
         # Create ancestor query for all sessions
         sesses = Session.query(ancestor=conf)
+        # Return set of ConferenceForm objects per Conference
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sesses]
+        )
+
+    @endpoints.method(SessionsByTypeForm, SessionForms,
+            path='conference/session/{websafeConferenceKey}/type',
+            http_method='GET',
+            name='getConferenceSessionsByType')
+    def getConferenceSessionsByType(self, request):
+        """Query for conference sessions by type."""
+        # Get the conference object from the request.
+        conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
+        # Create ancestor query for all sessions
+        sesses = Session.query(Session.typeOfSession == request.typeOfSession)
+        # Return set of ConferenceForm objects per Conference
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sesses]
+        )
+
+    @endpoints.method(SessionsByNameForm, SessionForms,
+            path='conference/session/{websafeConferenceKey}/name',
+            http_method='GET',
+            name='getConferenceSessionsByName')
+    def getConferenceSessionsByName(self, request):
+        """Query for conference sessions by type."""
+        # Get the conference object from the request.
+        conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
+        # Create ancestor query for all sessions
+        sesses = Session.query(Session.name == request.name)
+        # Return set of ConferenceForm objects per Conference
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sesses]
+        )
+
+    @endpoints.method(SessionsByDurationForm, SessionForms,
+            path='conference/session/{websafeConferenceKey}/duration',
+            http_method='GET',
+            name='getConferenceSessionsByDuration')
+    def getConferenceSessionsByDuration(self, request):
+        """Query for conference sessions by type."""
+        # Get the conference object from the request.
+        conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
+        # Create ancestor query for all sessions
+        sesses = Session.query(Session.duration == request.duration)
         # Return set of ConferenceForm objects per Conference
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sesses]
