@@ -45,6 +45,9 @@ from models import SessionsByNameForm
 from models import SessionsByDurationForm
 from models import SessionsBySpeakerForm
 
+# imporst for wishlist
+from models import WishlistForm
+
 from settings import WEB_CLIENT_ID
 from settings import ANDROID_CLIENT_ID
 from settings import IOS_CLIENT_ID
@@ -101,7 +104,13 @@ CONF_POST_REQUEST = endpoints.ResourceContainer(
 
 SESS_GET_REQUEST = endpoints.ResourceContainer(
     message_types.VoidMessage,
-    websafeConferenceKey=messages.StringField(1))
+    websafeConferenceKey=messages.StringField(1),
+)
+
+SESS_POST_REQUEST = endpoints.ResourceContainer(
+    SessionForm,
+    websafeConferenceKey=messages.StringField(1),
+)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -264,8 +273,8 @@ class ConferenceApi(remote.Service):
     @endpoints.method(SessionsBySpeakerForm, SessionForms,
             path='conference/speaker',
             http_method='GET',
-            name='getConferenceSessionsBySpeaker')
-    def getConferenceSessionsByDuration(self, request):
+            name='getSessionsBySpeaker')
+    def getSessionsBySpeaker(self, request):
         """Query for conference sessions by speaker."""
         # Create ancestor query for all sessions
         sesses = Session.query(Session.speaker == request.speaker)
@@ -273,6 +282,41 @@ class ConferenceApi(remote.Service):
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sesses]
         )
+
+
+# - - - Wishlists - - - - - - - - - - - - - - - - -
+
+    @endpoints.method(WishlistForm, ProfileForm,
+                      path="profile/addSessionToWishlist",
+                      http_method="POST",
+                      name="addSessionToWishlist")
+    def addSessionToWishlist(self, request):
+        """Add a session to the user's wishlist"""
+        # _doProfile than create a new method for updating profile.
+        return self._doProfile(request)
+
+
+    @endpoints.method(WishlistForm, SessionForms,
+                      path="profile/wishlist",
+                      http_method="POST",
+                      name="getSessionsInWishlist")
+    def getSessionsInWishlist(self, request):
+        """Get the sessions a user has saved to their wishlist"""
+        # Get the current user.
+        user = endpoints.get_current_user()
+        # If there isn't one, raise an authorization exception.
+        if not user:
+            raise endpoints.UnauthorizedException('Authorization required')
+        # Get their profile
+        prof = self._getProfileFromUser()
+        # Get the session keys they have saved in their wishlist.
+        wish_keys = [ndb.Key(urlsafe=skwl) for skwl in prof.sessionKeyWishlist]
+        # Query the session with the keys in wish_keys
+        sesses = Session.query(Session.key.IN(wish_keys))
+        return SessionForms(
+            items=[self._copySessionToForm(sess) for sess in sesses]
+        )
+
 
 # - - - Conference objects - - - - - - - - - - - - - - - - -
 
@@ -557,15 +601,17 @@ class ConferenceApi(remote.Service):
 
         # if saveProfile(), process user-modifyable fields
         if save_request:
-            for field in ('displayName', 'teeShirtSize'):
+            for field in ('displayName', 'teeShirtSize', 'sessionKeyWishlist'):
                 if hasattr(save_request, field):
                     val = getattr(save_request, field)
                     if val:
                         setattr(prof, field, str(val))
-                        #if field == 'teeShirtSize':
-                        #    setattr(prof, field, str(val).upper())
-                        #else:
-                        #    setattr(prof, field, val)
+                        if field == 'teeShirtSize':
+                            setattr(prof, field, str(val).upper())
+                        if field == 'sessionKeyWishlist':
+                            prof.sessionKeyWishlist.append(str(val))
+                        else:
+                            setattr(prof, field, val)
                         prof.put()
 
         # return ProfileForm
