@@ -45,7 +45,7 @@ from models import SessionsByNameForm
 from models import SessionsByDurationForm
 from models import SessionsBySpeakerForm
 
-# imporst for wishlist
+# import for wishlist
 from models import WishlistForm
 
 from settings import WEB_CLIENT_ID
@@ -55,15 +55,20 @@ from settings import ANDROID_AUDIENCE
 
 from utils import getUserId
 
+from google.net.proto.ProtocolBuffer import ProtocolBufferDecodeError
+
 EMAIL_SCOPE = endpoints.EMAIL_SCOPE
 API_EXPLORER_CLIENT_ID = endpoints.API_EXPLORER_CLIENT_ID
 MEMCACHE_ANNOUNCEMENTS_KEY = "RECENT_ANNOUNCEMENTS"
 ANNOUNCEMENT_TPL = ('Last chance to attend! The following conferences '
                     'are nearly sold out: %s')
+
+MEMCACHE_SPEAKER_KEY = "FEATURED_SPEAKER"
+SPEAKER_TPL = ('Our featured speaker for this session is: %s!')
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 DEFAULTS = {
-    "city": "Seattle, WA",
+    "city": "London",
     "maxAttendees": 10,
     "seatsAvailable": 10,
     "topics": [ "Development", "Python" ],
@@ -129,8 +134,11 @@ class ConferenceApi(remote.Service):
         sf = SessionForm()
         for field in sf.all_fields():
             if hasattr(sess, field.name):
+                ####
                 # convert Date to date string; just copy others
-                if field.name.endswith('Date') or field.name.endswith('Time'):
+                if field.name == 'date':
+                    setattr(sf, field.name, str(getattr(sess, field.name)))
+                elif field.name == 'startTime':
                     setattr(sf, field.name, str(getattr(sess, field.name)))
                 else:
                     setattr(sf, field.name, getattr(sess, field.name))
@@ -140,8 +148,8 @@ class ConferenceApi(remote.Service):
         return sf
 
     # Define an endpoint for adding sessions
-    @endpoints.method(SessionForm, SessionForm,
-                      path = 'conference/session',
+    @endpoints.method(SESS_POST_REQUEST, SessionForm,
+                      path = 'session',
                       http_method = 'POST',
                       name = 'createSession')
     def createSession(self, request):
@@ -206,12 +214,17 @@ class ConferenceApi(remote.Service):
         #     'sessionInfo': repr(request)},
         #     url='/tasks/send_confirmation_email'
         # )
+
+        sessions = Session.query(Session.speaker == data['speaker']).count()
+        if sessions > 1:
+            taskqueue.add(params={'speaker': data['speaker']}, url='/tasks/set_featured_speaker')
+
         # send the request over to the form.
         return self._copySessionToForm(request)
 
 
     @endpoints.method(SESS_GET_REQUEST, SessionForms,
-            path='conference/session/{websafeConferenceKey}',
+            path='sessions/get/{websafeConferenceKey}',
             http_method='GET', name='getConferenceSessions')
     def getConferenceSessions(self, request):
         """Return sessions from requested conference (by websafeConferenceKey)."""
@@ -225,7 +238,7 @@ class ConferenceApi(remote.Service):
         )
 
     @endpoints.method(SessionsByTypeForm, SessionForms,
-            path='conference/session/{websafeConferenceKey}/type',
+            path='session/type/{websafeConferenceKey}',
             http_method='GET',
             name='getConferenceSessionsByType')
     def getConferenceSessionsByType(self, request):
@@ -240,7 +253,7 @@ class ConferenceApi(remote.Service):
         )
 
     @endpoints.method(SessionsByNameForm, SessionForms,
-            path='conference/session/{websafeConferenceKey}/name',
+            path='session/name/{websafeConferenceKey}',
             http_method='GET',
             name='getConferenceSessionsByName')
     def getConferenceSessionsByName(self, request):
@@ -255,7 +268,7 @@ class ConferenceApi(remote.Service):
         )
 
     @endpoints.method(SessionsByDurationForm, SessionForms,
-            path='conference/session/{websafeConferenceKey}/duration',
+            path='session/duration/{websafeConferenceKey}',
             http_method='GET',
             name='getConferenceSessionsByDuration')
     def getConferenceSessionsByDuration(self, request):
@@ -271,7 +284,7 @@ class ConferenceApi(remote.Service):
 
 
     @endpoints.method(SessionsBySpeakerForm, SessionForms,
-            path='conference/speaker',
+            path='speaker',
             http_method='GET',
             name='getSessionsBySpeaker')
     def getSessionsBySpeaker(self, request):
@@ -285,14 +298,13 @@ class ConferenceApi(remote.Service):
 
 
 # - - - Wishlists - - - - - - - - - - - - - - - - -
-
     @endpoints.method(WishlistForm, ProfileForm,
                       path="profile/addSessionToWishlist",
                       http_method="POST",
                       name="addSessionToWishlist")
     def addSessionToWishlist(self, request):
         """Add a session to the user's wishlist"""
-        # _doProfile than create a new method for updating profile.
+
         return self._doProfile(request)
 
 
@@ -316,6 +328,35 @@ class ConferenceApi(remote.Service):
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sesses]
         )
+
+
+# - - - Featured Speaker - - - - - - - - - - - - - - - - -
+
+    @staticmethod
+    def _cacheSpeaker(speaker):
+        """Replace the default featured speaker with anyone that is determined
+        to be the speaker at more than one session.
+        """
+        # First we'll grab all of the sessions, using fetch(), that has a speaker.
+        sesses = Session.query(Session.speaker == speaker).fetch()
+        # If more than one session is returned:
+        if len(sesses) >= 2:
+            # Update the string to have the new speaker.
+            featSpeak = (SPEAKER_TPL % speaker)
+            # Set the Memcache with the update.
+            memcache.set(MEMCACHE_SPEAKER_KEY, featSpeak)
+        # Otherwise set the featSpeak equal to whatever it was before.
+        else:
+            featSpeak = (memcache.get(MEMCACHE_SPEAKER_KEY) or "")
+        # Return the featured speaker.
+        return featSpeak
+
+    @endpoints.method(message_types.VoidMessage, StringMessage,
+            path='conference/featSpeaker/get',
+            http_method='GET', name='getFeaturedSpeaker')
+    def getFeaturedSpeaker(self, request):
+        """Return the Featured Speaker from memcache."""
+        return StringMessage(data=memcache.get(MEMCACHE_SPEAKER_KEY) or "")
 
 
 # - - - Conference objects - - - - - - - - - - - - - - - - -
@@ -605,7 +646,6 @@ class ConferenceApi(remote.Service):
                 if hasattr(save_request, field):
                     val = getattr(save_request, field)
                     if val:
-                        setattr(prof, field, str(val))
                         if field == 'teeShirtSize':
                             setattr(prof, field, str(val).upper())
                         if field == 'sessionKeyWishlist':

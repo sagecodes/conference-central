@@ -17,3 +17,5 @@ ANDROID_CLIENT_ID = 'replace with Android client ID'
 IOS_CLIENT_ID = 'replace with iOS client ID'
 ANDROID_AUDIENCE = WEB_CLIENT_ID
 
+# WEB_CLIENT_ID = '92535834247-q02j3tjh5r4uulmo5r0i2erb1ug0o4vr.apps.googleusercontent.com'
+
