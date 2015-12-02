@@ -12,6 +12,8 @@ created by wesc on 2014 apr 21
 
 __author__ = 'wesc+api@google.com (Wesley Chun)'
 
+from google.net.proto.ProtocolBuffer import ProtocolBufferDecodeError
+
 
 from datetime import datetime
 
@@ -45,6 +47,7 @@ from models import SessionsByNameForm
 from models import SessionsByDurationForm
 from models import SessionsBySpeakerForm
 
+import urllib
 # import for wishlist
 from models import WishlistForm
 
@@ -116,6 +119,7 @@ SESS_POST_REQUEST = endpoints.ResourceContainer(
     SessionForm,
     websafeConferenceKey=messages.StringField(1),
 )
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -307,10 +311,8 @@ class ConferenceApi(remote.Service):
 
         return self._doProfile(request)
 
-
     @endpoints.method(WishlistForm, SessionForms,
-                      path="profile/wishlist",
-                      http_method="POST",
+                      path="profile/wishlist'",
                       name="getSessionsInWishlist")
     def getSessionsInWishlist(self, request):
         """Get the sessions a user has saved to their wishlist"""
@@ -377,7 +379,6 @@ class ConferenceApi(remote.Service):
             setattr(cf, 'organizerDisplayName', displayName)
         cf.check_initialized()
         return cf
-
 
     def _createConferenceObject(self, request):
         """Create or update Conference object, returning ConferenceForm/request."""
@@ -577,7 +578,7 @@ class ConferenceApi(remote.Service):
         """Query for conferences."""
         conferences = self._getQuery(request)
 
-        # need to fetch organiser displayName from profiles
+        # need to fetch organizer displayName from profiles
         # get all keys and use get_multi for speed
         organisers = [(ndb.Key(Profile, conf.organizerUserId)) for conf in conferences]
         profiles = ndb.get_multi(organisers)
@@ -649,14 +650,13 @@ class ConferenceApi(remote.Service):
                         if field == 'teeShirtSize':
                             setattr(prof, field, str(val).upper())
                         if field == 'sessionKeyWishlist':
-                            prof.sessionKeyWishlist.append(str(val))
+                            prof.sessionKeyWishlist.append(val)
                         else:
                             setattr(prof, field, val)
                         prof.put()
 
         # return ProfileForm
         return self._copyProfileToForm(prof)
-
 
     @endpoints.method(message_types.VoidMessage, ProfileForm,
             path='profile', http_method='GET', name='getProfile')

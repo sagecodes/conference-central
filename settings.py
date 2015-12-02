@@ -19,3 +19,7 @@ ANDROID_AUDIENCE = WEB_CLIENT_ID
 
 # WEB_CLIENT_ID = '92535834247-q02j3tjh5r4uulmo5r0i2erb1ug0o4vr.apps.googleusercontent.com'
 
+# new con central
+# 62072043471-8acsntskfbgj2sv8hsv7ub4qnf4jlb2s.apps.googleusercontent.com
+
+
