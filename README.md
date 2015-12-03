@@ -45,7 +45,8 @@ Properties for sessions are saved in their according value types:
     startTime       = ndb.TimeProperty()
 
 ```
-- Session endpoints are implemented as standalone solutions and processed as requests in _doProfile
+- Session endpoints are implemented as standalone solutions
+- Adding and deleting sessions are processed as requests i _doProfile
 - validation for adding and deleting sessions is provided in their respective endpoints
 - implemented separate session copy form
 
