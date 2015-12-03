@@ -302,7 +302,12 @@ class ConferenceApi(remote.Service):
     def addSessionToWishlist(self, request):
         """Add a session to the user's wishlist"""
         # send request to _doProfile for saving keys in profile
-        return self._doProfile(request)
+        prof = self._getProfileFromUser()
+        wssk = request.websafeSessionKey
+        if wssk not in prof.websafeSessionKey:
+            return self._doProfile(request)
+        else:
+            return 'Session already in wishlist'
 
     @endpoints.method(WishlistForm, SessionForms,
                       path="profile/wishlist'",
@@ -324,6 +329,19 @@ class ConferenceApi(remote.Service):
             items=[self._copySessionToForm(sess) for sess in sesses]
         )
 
+    # Delete session in user wishlist
+    @endpoints.method(WishlistForm, ProfileForm,
+            path='profile/deleteSessionFromWishlist',
+            http_method='DELETE',
+            name='deleteSessionFromWishlist')
+    def deleteSessionFromWishlist(self, request):
+        """Delete Session from user wishlist."""
+        prof = self._getProfileFromUser()
+        wssk = request.websafeSessionKey
+        if wssk in prof.websafeSessionKey:
+            return self._doProfile(request)
+        else:
+            return 'session not i wishlist'
 
 # - - - Featured Speaker - - - - - - - - - - - - - - - - -
 
@@ -643,7 +661,10 @@ class ConferenceApi(remote.Service):
                         if field == 'teeShirtSize':
                             setattr(prof, field, str(val).upper())
                         if field == 'websafeSessionKey':
-                            prof.websafeSessionKey.append(val)
+                            if val in prof.websafeSessionKey:
+                                prof.websafeSessionKey.remove(val)
+                            else:
+                                prof.websafeSessionKey.append(val)
                         else:
                             setattr(prof, field, val)
                         prof.put()
