@@ -1,12 +1,52 @@
 #Conference Central Application
 
-##Tasks completed:
-- Sessions
-- wishlist
-- Additional Queries
-- Featured Speaker
+## Endpoints Implemented & Test Instructions
 
-Extra credit problem: "How can we query sessions not after 7 PM and not workshops?"
+The following is a list of endpoints implemented and how to test them via the Google developer console
+
+- conference.createSession
+    - provide the following:
+    - WebsafeConferenceKey(Long string at end of URL for conference)
+    - date (year-month-day)
+    - duration in minutes
+    - name(session name)
+    - startTime in 24 hour format
+    - Type of session
+    - Speaker
+
+- getConferenceSessions
+    - Just copy in the websafeConferenceKey to retrieve all sessions for that conference
+- getConferenceSessionsByDuration
+    - provide websafeConferenceKey and duration you want to search for
+- getConferenceSessionsByName
+    - provide websafeConferenceKey and name of session you want to search for
+- addSessionToWishlist
+    - provide websafeConferenceKey and websafeSessionkey(Found in output of session. You can use getConferenceSessions to find keys)
+- getSessionsInWishlist
+    - just execute the app will find user info from login
+- getFeaturedSpeaker
+    - If there is a speaker that has more than 1 session the speaker will be set as featured speaker in memcache
+
+----
+Problem Statement: "How can we query sessions not after 7 PM and not workshops?"
+
+- the reason why this problem is difficult is that app engine cannot use [datastore](https://cloud.google.com/appengine/docs/python/datastore/queries?hl=en) to query multiple properties for inequalities. I think the simplest way to get around this would be to provide two separate inequality queries and combine the results.
+
+##Design Choices
+Properties for sessions are saved in their according value types:
+
+```
+    name            = ndb.StringProperty(required=True)
+    highlights      = ndb.StringProperty()
+    speaker         = ndb.StringProperty()
+    duration        = ndb.IntegerProperty()
+    typeOfSession   = ndb.StringProperty()
+    date            = ndb.DateProperty()
+    startTime       = ndb.TimeProperty()
+
+```
+- Session endpoints are implemented as standalone solutions
+- implemented separate session copy form
 
 
 ## Products
@@ -32,7 +72,6 @@ Extra credit problem: "How can we query sessions not after 7 PM and not workshop
 1. (Optional) Generate your client library(ies) with [the endpoints tool][6].
 1. Deploy your application.
 
-## Grading Endpoint Test Instructions
 
 
 
