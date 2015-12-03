@@ -21,7 +21,7 @@ The following is a list of endpoints implemented and how to test them via the Go
 - getConferenceSessionsByName
     - provide websafeConferenceKey and name of session you want to search for
 - addSessionToWishlist
-    - provide websafeConferenceKey and websafeSessionkey(Found in output of session. You can use getConferenceSessions to find keys)
+    -  provide websafeSessionkey(Found in output of session. You can use getConferenceSessions to find keys)
 - getSessionsInWishlist
     - just execute the app will find user info from login
 - getFeaturedSpeaker
@@ -45,7 +45,8 @@ Properties for sessions are saved in their according value types:
     startTime       = ndb.TimeProperty()
 
 ```
-- Session endpoints are implemented as standalone solutions
+- Session endpoints are implemented as standalone solutions and processed as requests in _doProfile
+- validation for adding and deleting sessions is provided in their respective endpoints
 - implemented separate session copy form
 
 
