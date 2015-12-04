@@ -1,4 +1,5 @@
 #Conference Central Application
+The conference central application provides scalable cloud enpoints using Google app engine
 
 ## Endpoints Implemented & Test Instructions
 
@@ -10,27 +11,31 @@ The following is a list of endpoints implemented and how to test them via the Go
     - date (year-month-day)
     - duration in minutes
     - name(session name)
-    - startTime in 24 hour format
+    - startTime in 24 hour format(8:00, 13:00, etc)
     - Type of session
     - Speaker
 
 - getConferenceSessions
     - Just copy in the websafeConferenceKey to retrieve all sessions for that conference
-- getConferenceSessionsByDuration
-    - provide websafeConferenceKey and duration you want to search for
-- getConferenceSessionsByName
-    - provide websafeConferenceKey and name of session you want to search for
+- Aditional Query: getConferenceSessionsByDuration
+    - provide websafeConferenceKey and duration you are looking for
+- Aditional Query: getConferenceSessionsByName
+    - provide websafeConferenceKey and name of session you are looking for
 - addSessionToWishlist
     -  provide websafeSessionkey(Found in output of session. You can use getConferenceSessions to find keys)
-- getSessionsInWishlist
+- getSessionsInWishlist *(old grading rubic requirment)*
     - just execute the app will find user info from login
+
+- deleteSessionInWishlist
+    - Provide websafeSessionKey you wish to delete
 - getFeaturedSpeaker
     - If there is a speaker that has more than 1 session the speaker will be set as featured speaker in memcache
 
 ----
 Problem Statement: "How can we query sessions not after 7 PM and not workshops?"
 
-- the reason why this problem is difficult is that app engine cannot use [datastore](https://cloud.google.com/appengine/docs/python/datastore/queries?hl=en) to query multiple properties for inequalities. I think the simplest way to get around this would be to provide two separate inequality queries and combine the results.
+- the reason why this problem is difficult is that app engine cannot use [datastore](https://cloud.google.com/appengine/docs/python/datastore/queries?hl=en) to query multiple properties for inequalities.
+- I think the simplest way to get around this would be to provide two separate queries. One each for both the time query and session type. Store results in a list Then using python(or language of application) to further filter the results you are looking for. Perhaps a better solution if this type of querying is prominent through the application would be to keep a stored list of sessions in a separate python list or dict. You would then be able to easily filer/manipulate the data in anyway before passing the results back through App engine or front-end(depending on how you would like to set up the architecture).
 
 ##Design Choices
 Properties for sessions are saved in their according value types:
@@ -45,10 +50,22 @@ Properties for sessions are saved in their according value types:
     startTime       = ndb.TimeProperty()
 
 ```
-- Session endpoints are implemented as standalone solutions
-- Adding and deleting sessions are processed as requests i _doProfile
-- validation for adding and deleting sessions is provided in their respective endpoints
-- implemented separate session copy form
+
+Session Properties are formatted in a logical manner in NDB so that when used outside the API they can maintain proper formatting as a developer would expect for ease of interaction. A name or description type field is a stringProperty, a date is a dateProperty, a reference to time is a timeProperty, duration in minutes is a Integer property.
+
+Sessions are implemented similar to conferences as a standalone solution. They utilize a separate session form to copy data and return form objects respectively. SessionsKeys can be saved in profile as a wish-list for sessions to attend I use data validation in the form of a Try: to catch any non urlSafe strings before being saved to profile. Validation is also performed to make sure no repeated values are saved in wish-list.
+
+FeaturedSpeaker is simply pulled from conference sessions into memcache and stored in a string when a name is listed as speaker for multiple sessions. Note that if sessions were not created recently the speaker may not show if memcache was flushed.
+
+
+## Improvements that could be done:
+- Add resource containers to API endpoints for future compatibility and avoid degradation
+- Provide better logging and formatted feedback to user
+- add more flexible/useful query types for getting various session types
+- implement one copy to form method to be shared with conferences and sessions
+- add more data validation on sessions, such as making sure the session date is matched within dates of conferences.
+- make use of the native data-store type KeyProperty for storing links to other ndb.Models.
+- Store featured speakers for each conference in Conference Form so that multiple conferences could be queried seperatly for their featured speaker
 
 
 ## Products
@@ -83,6 +100,7 @@ Properties for sessions are saved in their according value types:
 - [App Engine: Cloud Endpoints](https://www.youtube.com/watch?v=uy0tP6_kWJ4)
 - [App Engine: Cloud Endpoints, Pt 2](https://www.youtube.com/watch?v=9wNRUd9E1jM)
 - [Various student posting in Udacity forums](https://discussions.udacity.com/c/nd004-p4-conference-organization-app)
+- [Hnadle URLSafe validation - Stack overflow](http://stackoverflow.com/questions/20731851/how-to-properly-handle-wrong-urlsafe-key-provided)
 
 
 

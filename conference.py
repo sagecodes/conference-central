@@ -14,6 +14,7 @@ __author__ = 'wesc+api@google.com (Wesley Chun)'
 
 from google.net.proto.ProtocolBuffer import ProtocolBufferDecodeError
 
+from google.net.proto.ProtocolBuffer import ProtocolBufferDecodeError
 
 from datetime import datetime
 
@@ -136,8 +137,7 @@ class ConferenceApi(remote.Service):
         sf = SessionForm()
         for field in sf.all_fields():
             if hasattr(sess, field.name):
-                ####
-                # convert Date to date string; just copy others
+
                 if field.name == 'date':
                     setattr(sf, field.name, str(getattr(sess, field.name)))
                 elif field.name == 'startTime':
@@ -304,10 +304,14 @@ class ConferenceApi(remote.Service):
         # send request to _doProfile for saving keys in profile
         prof = self._getProfileFromUser()
         wssk = request.websafeSessionKey
-        if wssk not in prof.websafeSessionKey:
-            return self._doProfile(request)
-        else:
-            return 'Session already in wishlist'
+        try:
+            wssk = ndb.Key(urlsafe=wssk)
+            if wssk not in prof.websafeSessionKey:
+                return self._doProfile(request)
+            else:
+                return 'Session already in wishlist'
+        except ProtocolBufferDecodeError:
+            wssk = None
 
     @endpoints.method(WishlistForm, SessionForms,
                       path="profile/wishlist'",
@@ -324,7 +328,7 @@ class ConferenceApi(remote.Service):
         # Get session keys saved in user wishlist.
         wish_keys = [ndb.Key(urlsafe=skwl) for skwl in prof.websafeSessionKey]
         # Query session keys in wish_keys
-        sesses = Session.query(Session.key.IN(wish_keys))
+        sesses = ndb.get_multi(wish_keys)
         return SessionForms(
             items=[self._copySessionToForm(sess) for sess in sesses]
         )
@@ -351,12 +355,14 @@ class ConferenceApi(remote.Service):
         to be the speaker at more than one session.
         """
         # fetch all sessions that have speaker.
-        sesses = Session.query(Session.speaker == speaker).fetch()
+        sessions = Session.query(Session.speaker == speaker).fetch()
         # If more than one session is returned:
-        if len(sesses) >= 2:
+        if len(sessions) > 1:
             # Update string to have new speaker.
-            featSpeak = (SPEAKER_TPL % speaker)
+            featSpeak = (SPEAKER_TPL % speaker) + 'Sessions:'
             # Set Memcache with update.
+            for session in sessions:
+                featSpeak += ' ' + session.name
             memcache.set(MEMCACHE_SPEAKER_KEY, featSpeak)
         # Otherwise set featSpeak equal to previous value
         else:
@@ -661,6 +667,7 @@ class ConferenceApi(remote.Service):
                         if field == 'teeShirtSize':
                             setattr(prof, field, str(val).upper())
                         if field == 'websafeSessionKey':
+
                             if val in prof.websafeSessionKey:
                                 prof.websafeSessionKey.remove(val)
                             else:

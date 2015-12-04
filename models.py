@@ -179,5 +179,4 @@ class SessionsBySpeakerForm(messages.Message):
 
 class WishlistForm(messages.Message):
     """WishlistForm -- Form for adding a session to wishlist"""
-    websafeConferenceKey = messages.StringField(1)
     websafeSessionKey = messages.StringField(2)
