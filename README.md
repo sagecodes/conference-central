@@ -1,5 +1,8 @@
 #Conference Central Application
-The conference central application provides scalable cloud enpoints using Google app engine
+The conference central application provides scalable cloud endpoints using Google app engine. Users can create and register for conferences, with details such as location, description, etc. An automated email will be sent to creator of conference on creation Users can also create and view sessions. Sessions can be added, deleted and fetched from the users profile as a wish-list type function. Additional queries provided to search conference sessions by name and duration. All session interaction is currently only implemented as a backend/API functionality and can be tested in the Google Developer console. If someone is speaking at more than on session they are set as the featured speaker.
+
+See further project details below:
+
 
 ## Endpoints Implemented & Test Instructions
 
@@ -55,7 +58,7 @@ Session Properties are formatted in a logical manner in NDB so that when used ou
 
 Sessions are implemented similar to conferences as a standalone solution. They utilize a separate session form to copy data and return form objects respectively. SessionsKeys can be saved in profile as a wish-list for sessions to attend I use data validation in the form of a Try: to catch any non urlSafe strings before being saved to profile. Validation is also performed to make sure no repeated values are saved in wish-list.
 
-FeaturedSpeaker is simply pulled from conference sessions into memcache and stored in a string when a name is listed as speaker for multiple sessions. Note that if sessions were not created recently the speaker may not show if memcache was flushed.
+FeaturedSpeaker is simply pulled from conference sessions into memcache and stored in a string when a name is listed as speaker for multiple sessions. Note that if sessions were not created recently the speaker may not show if memcache was flushed. I think a good redesign would be to have featuredSpeaker saved as a string in the conference ndb model.
 
 
 ## Improvements that could be done:
@@ -101,6 +104,3 @@ FeaturedSpeaker is simply pulled from conference sessions into memcache and stor
 - [App Engine: Cloud Endpoints, Pt 2](https://www.youtube.com/watch?v=9wNRUd9E1jM)
 - [Various student posting in Udacity forums](https://discussions.udacity.com/c/nd004-p4-conference-organization-app)
 - [Hnadle URLSafe validation - Stack overflow](http://stackoverflow.com/questions/20731851/how-to-properly-handle-wrong-urlsafe-key-provided)
-
-
-

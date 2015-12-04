@@ -132,20 +132,20 @@ class ConferenceApi(remote.Service):
 # - - - Sessions - - - - - - - - - - - - - - - - - - - -
 
     # Define a method to copy session request to sessinonForm.
-    def _copySessionToForm(self, sess):
+    def _copySessionToForm(self, session):
         """Copy relevant fields from Session to SessionForm."""
         sf = SessionForm()
         for field in sf.all_fields():
-            if hasattr(sess, field.name):
+            if hasattr(session, field.name):
 
                 if field.name == 'date':
-                    setattr(sf, field.name, str(getattr(sess, field.name)))
+                    setattr(sf, field.name, str(getattr(session, field.name)))
                 elif field.name == 'startTime':
-                    setattr(sf, field.name, str(getattr(sess, field.name)))
+                    setattr(sf, field.name, str(getattr(session, field.name)))
                 else:
-                    setattr(sf, field.name, getattr(sess, field.name))
+                    setattr(sf, field.name, getattr(session, field.name))
             elif field.name == "websafeKey":
-                setattr(sf, field.name, sess.key.urlsafe())
+                setattr(sf, field.name, session.key.urlsafe())
         sf.check_initialized()
         return sf
 
@@ -228,10 +228,10 @@ class ConferenceApi(remote.Service):
         # Get conference object from request.
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
         # Create ancestor query for sessions
-        sesses = Session.query(ancestor=conf)
+        sessions = Session.query(ancestor=conf)
         # Return set of ConferenceForm objects per Conference
         return SessionForms(
-            items=[self._copySessionToForm(sess) for sess in sesses]
+            items=[self._copySessionToForm(session) for session in sessions]
         )
 
     @endpoints.method(SessionsByTypeForm, SessionForms,
@@ -243,10 +243,10 @@ class ConferenceApi(remote.Service):
         # Get conference object from request.
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
         # Create ancestor query for sessions
-        sesses = Session.query(Session.typeOfSession == request.typeOfSession)
+        sessions = Session.query(Session.typeOfSession == request.typeOfSession)
         # Return set of ConferenceForm objects per Conference
         return SessionForms(
-            items=[self._copySessionToForm(sess) for sess in sesses]
+            items=[self._copySessionToForm(session) for session in sessions]
         )
 
     @endpoints.method(SessionsByNameForm, SessionForms,
@@ -258,10 +258,10 @@ class ConferenceApi(remote.Service):
         # Get conference object from request.
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
         # Create ancestor query for sessions
-        sesses = Session.query(Session.name == request.name)
+        sessions = Session.query(Session.name == request.name)
         # Return set of ConferenceForm objects per Conference
         return SessionForms(
-            items=[self._copySessionToForm(sess) for sess in sesses]
+            items=[self._copySessionToForm(session) for session in sessions]
         )
 
     @endpoints.method(SessionsByDurationForm, SessionForms,
@@ -273,10 +273,10 @@ class ConferenceApi(remote.Service):
         # Get conference object from request.
         conf = ndb.Key(urlsafe=request.websafeConferenceKey).get().key
         # Create ancestor query for sessions
-        sesses = Session.query(Session.duration == request.duration)
+        sessions = Session.query(Session.duration == request.duration)
         # Return set of ConferenceForm objects per Conference
         return SessionForms(
-            items=[self._copySessionToForm(sess) for sess in sesses]
+            items=[self._copySessionToForm(session) for session in sessions]
         )
 
 
@@ -287,10 +287,10 @@ class ConferenceApi(remote.Service):
     def getSessionsBySpeaker(self, request):
         """Query for conference sessions by speaker."""
         # Create ancestor query for sessions
-        sesses = Session.query(Session.speaker == request.speaker)
+        sessions = Session.query(Session.speaker == request.speaker)
         # Return set of ConferenceForm objects per Conference
         return SessionForms(
-            items=[self._copySessionToForm(sess) for sess in sesses]
+            items=[self._copySessionToForm(session) for session in sessions]
         )
 
 
@@ -328,9 +328,9 @@ class ConferenceApi(remote.Service):
         # Get session keys saved in user wishlist.
         wish_keys = [ndb.Key(urlsafe=skwl) for skwl in prof.websafeSessionKey]
         # Query session keys in wish_keys
-        sesses = ndb.get_multi(wish_keys)
+        sessions = ndb.get_multi(wish_keys)
         return SessionForms(
-            items=[self._copySessionToForm(sess) for sess in sesses]
+            items=[self._copySessionToForm(session) for session in sessions]
         )
 
     # Delete session in user wishlist
@@ -359,7 +359,7 @@ class ConferenceApi(remote.Service):
         # If more than one session is returned:
         if len(sessions) > 1:
             # Update string to have new speaker.
-            featSpeak = (SPEAKER_TPL % speaker) + 'Sessions:'
+            featSpeak = (SPEAKER_TPL % speaker) + ' ' + 'Sessions:'
             # Set Memcache with update.
             for session in sessions:
                 featSpeak += ' ' + session.name
