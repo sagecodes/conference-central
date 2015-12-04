@@ -1,5 +1,5 @@
 #Conference Central Application
-The conference central application provides scalable cloud endpoints using Google app engine. Users can create and register for conferences, with details such as location, description, etc. An automated email will be sent to creator of conference on creation Users can also create and view sessions. Sessions can be added, deleted and fetched from the users profile as a wish-list type function. Additional queries provided to search conference sessions by name and duration. All session interaction is currently only implemented as a backend/API functionality and can be tested in the Google Developer console. If someone is speaking at more than on session they are set as the featured speaker.
+The conference central application provides scalable cloud endpoints using Google app engine. Users can create and register for conferences, with details such as location, description, etc. An automated email will be sent to creator of conference on creation Users can also create and view sessions. Sessions can be added, deleted and fetched from the users profile as a wish-list type function. Additional queries provided to search conference sessions by name and duration. All session interaction is currently only implemented as a back-end/API functionality and can be tested in the Google Developer console. If someone is speaking at more than on session they are set as the featured speaker.
 
 See further project details below:
 
@@ -26,7 +26,7 @@ The following is a list of endpoints implemented and how to test them via the Go
     - provide websafeConferenceKey and name of session you are looking for
 - addSessionToWishlist
     -  provide websafeSessionkey(Found in output of session. You can use getConferenceSessions to find keys)
-- getSessionsInWishlist *(old grading rubic requirment)*
+- getSessionsInWishlist *(old requirement)*
     - just execute the app will find user info from login
 
 - deleteSessionInWishlist
@@ -56,7 +56,7 @@ Properties for sessions are saved in their according value types:
 
 Session Properties are formatted in a logical manner in NDB so that when used outside the API they can maintain proper formatting as a developer would expect for ease of interaction. A name or description type field is a stringProperty, a date is a dateProperty, a reference to time is a timeProperty, duration in minutes is a Integer property.
 
-Sessions are implemented similar to conferences as a standalone solution. They utilize a separate session form to copy data and return form objects respectively. SessionsKeys can be saved in profile as a wish-list for sessions to attend I use data validation in the form of a Try: to catch any non urlSafe strings before being saved to profile. Validation is also performed to make sure no repeated values are saved in wish-list.
+Sessions are implemented similar to conferences as a standalone solution. They utilize a separate session form to copy data and return form objects respectively and are modeled in NBD. SessionsKeys can be saved in profile as a wish-list for sessions to attend I use data validation in the form of a Try: to catch any non urlSafe strings before being saved to profile. Validation is also performed to make sure no repeated values are saved in wish-list.
 
 FeaturedSpeaker is simply pulled from conference sessions into memcache and stored in a string when a name is listed as speaker for multiple sessions. Note that if sessions were not created recently the speaker may not show if memcache was flushed. I think a good redesign would be to have featuredSpeaker saved as a string in the conference ndb model.
 
@@ -68,7 +68,7 @@ FeaturedSpeaker is simply pulled from conference sessions into memcache and stor
 - implement one copy to form method to be shared with conferences and sessions
 - add more data validation on sessions, such as making sure the session date is matched within dates of conferences.
 - make use of the native data-store type KeyProperty for storing links to other ndb.Models.
-- Store featured speakers for each conference in Conference Form so that multiple conferences could be queried seperatly for their featured speaker
+- Store featured speakers for each conference in Conference Form so that multiple conferences could be queried separately for their featured speaker
 
 
 ## Products
